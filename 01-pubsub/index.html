@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        개발자도구에서 콘솔로그를 확인해주세요
+    </div>
+    <script>
+        //함수형 프로토타입
+        function Public(state) {
+            // 이렇게 함수 안의 메소드를 제외한 공간이 생성자의 공간이라고 생각하면 된다. 선언과 동시에 생성한다고 생각하면 쉽다.
+            this.state = state;
+            this.observers = new Set();
+
+            Object.keys(state).forEach(key => Object.defineProperty(this, key, {
+                get: () => this.state[key]
+            }));
+
+            this.changeInside = (newState) => {
+                this.state = { ...this.state, ...newState };
+                this.informSubscribers();
+            }
+
+            this.registSubscriber = (subscriber) => {
+                this.observers.add(subscriber);
+            }
+
+            this.informSubscribers = () => {
+                this.observers.forEach(fn => fn());
+            }
+        }
+
+        function Subscriber(onChange) {
+            this.fn = onChange;
+
+            this.subscribe = (publisher) => {
+                publisher.registSubscriber(this.fn);
+            }
+        }
+
+        const State = new Public({
+            a: 10,
+            b: 20,
+        });
+
+        const additionCalculator = new Subscriber(() => console.log(`a + b = ${State.a + State.b}`));
+        const multiplicationCalculator = new Subscriber(() => console.log(`a * b = ${State.a * State.b}`));
+
+        additionCalculator.subscribe(State);
+        multiplicationCalculator.subscribe(State);
+
+        State.informSubscribers();
+        // a + b = 30
+        // a * b = 200
+
+        State.changeInside({ a: 100, b: 200 });
+        // a + b = 300
+        // a * b = 20000
+
+    </script>
+</body>
+
+</html>
